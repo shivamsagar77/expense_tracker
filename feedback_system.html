@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Feedback System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 400px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .stars span {
+      font-size: 24px;
+      cursor: pointer;
+      color: gray;
+      transition: color 0.2s;
+    }
+
+    .stars .selected {
+      color: gold;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    h3 {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Rate Us</h2>
+    <input type="text" id="username" placeholder="Enter your name" />
+    
+    <div class="stars" id="star-container">
+      <!-- Stars will be added here by JS -->
+    </div>
+
+    <button onclick="submitFeedback()">Submit</button>
+
+    <h3>Submitted Feedback</h3>
+    <ul id="feedback-list"></ul>
+
+    <h3>Star Rating Summary</h3>
+    <ul id="rating-summary"></ul>
+  </div>
+
+  <script>
+    let selectedRating = 0;
+    let feedbacks = [];
+    let ratingCounts = [0, 0, 0, 0, 0]; // Index 0 = 1 star, 4 = 5 stars
+
+    const starContainer = document.getElementById("star-container");
+
+    // Create star elements
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement("span");
+      star.textContent = "★";
+      star.dataset.value = i;
+      star.addEventListener("click", () => {
+        selectedRating = i;
+        updateStars(i);
+      });
+      starContainer.appendChild(star);
+    }
+
+    function updateStars(rating) {
+      const stars = starContainer.querySelectorAll("span");
+      stars.forEach((star, index) => {
+        star.classList.toggle("selected", index < rating);
+      });
+    }
+
+    function submitFeedback() {
+      const nameInput = document.getElementById("username");
+      const name = nameInput.value.trim();
+
+      if (!name || selectedRating === 0) {
+        alert("Please enter your name and select a rating.");
+        return;
+      }
+
+      feedbacks.push({ name, rating: selectedRating });
+      ratingCounts[selectedRating - 1]++;
+
+      nameInput.value = "";
+      selectedRating = 0;
+      updateStars(0);
+
+      renderFeedbacks();
+      renderSummary();
+    }
+
+    function renderFeedbacks() {
+      const list = document.getElementById("feedback-list");
+      list.innerHTML = "";
+      feedbacks.forEach(fb => {
+        const li = document.createElement("li");
+        li.textContent = `${fb.name} gave ${fb.rating} star(s)`;
+        list.appendChild(li);
+      });
+    }
+
+    function renderSummary() {
+      const summary = document.getElementById("rating-summary");
+      summary.innerHTML = "";
+      ratingCounts.forEach((count, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${index + 1} star: ${count}`;
+        summary.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>

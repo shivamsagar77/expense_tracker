@@ -36,13 +36,28 @@
 </div>
 
 <script>
-  let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+  let expenses = [];
   let editIndex = -1;
+  let editId = null; // To keep track of the DB id when editing
 
   const form = document.getElementById("expense-form");
   const nameInput = document.getElementById("expense-name");
   const amountInput = document.getElementById("expense-amount");
   const list = document.getElementById("expense-list");
+
+  // Fetch expenses from backend API
+  async function fetchExpenses() {
+    try {
+      const res = await fetch('/api/expenses');
+      const data = await res.json();
+      if(data.success) {
+        expenses = data.data;  // backend returns { success: true, data: [...] }
+        renderExpenses();
+      }
+    } catch (error) {
+      console.error('Failed to fetch expenses:', error);
+    }
+  }
 
   // Render expenses in table
   function renderExpenses() {
@@ -62,29 +77,50 @@
     });
   }
 
-  // Add or Update Expense
-  form.onsubmit = (e) => {
+  // Add or Update Expense (calls backend)
+  form.onsubmit = async (e) => {
     e.preventDefault();
     const name = nameInput.value.trim();
     const amount = amountInput.value.trim();
 
-    if (name && amount) {
-      const newExpense = { name, amount };
+    if (!name || !amount) return;
 
+    try {
       if (editIndex === -1) {
-        expenses.push(newExpense);
+        // Add new expense - POST
+        const res = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, amount })
+        });
+        const data = await res.json();
+        if(data.success) {
+          expenses.push(data.data);
+          renderExpenses();
+          form.reset();
+        }
       } else {
-        expenses[editIndex] = newExpense;
-        editIndex = -1;
+        // Update existing expense - PUT
+        const id = expenses[editIndex].id;
+        const res = await fetch(`/api/expenses/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, amount })
+        });
+        const data = await res.json();
+        if(data.success) {
+          expenses[editIndex] = data.data;
+          renderExpenses();
+          form.reset();
+          editIndex = -1;
+        }
       }
-
-      localStorage.setItem("expenses", JSON.stringify(expenses));
-      renderExpenses();
-      form.reset();
+    } catch (error) {
+      console.error('Error adding/updating expense:', error);
     }
   };
 
-  // Edit Expense
+  // Edit expense - load values into form
   function editExpense(index) {
     const exp = expenses[index];
     nameInput.value = exp.name;
@@ -92,18 +128,28 @@
     editIndex = index;
   }
 
-  // Delete Expense
-  function deleteExpense(index) {
-    if (confirm("Are you sure you want to delete this expense?")) {
-      expenses.splice(index, 1);
-      localStorage.setItem("expenses", JSON.stringify(expenses));
-      renderExpenses();
+  // Delete expense - DELETE request to backend
+  async function deleteExpense(index) {
+    if (!confirm("Are you sure you want to delete this expense?")) return;
+
+    const id = expenses[index].id;
+
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        expenses.splice(index, 1);
+        renderExpenses();
+      }
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
     }
   }
 
-  // Initial render
-  renderExpenses();
+  // On page load, fetch expenses from backend
+  fetchExpenses();
 </script>
+
 
 </body>
 </html>

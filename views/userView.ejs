@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .dashboard-card {
+            transition: transform 0.2s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .expense-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .income-summary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Expense Tracker</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.name %>!</span>
+                <a class="btn btn-outline-light btn-sm" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card dashboard-card expense-summary">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Expenses</h5>
+                        <h2 class="card-text">₹<%= user.totalexpense || 0 %></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card income-summary">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">This Month</h5>
+                        <h2 class="card-text">₹0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Account Type</h5>
+                        <h4 class="card-text">
+                            <% if (user.ispremimumuser) { %>
+                                <span class="badge bg-warning">Premium</span>
+                            <% } else { %>
+                                <span class="badge bg-secondary">Free</span>
+                            <% } %>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Recent Transactions</h5>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">Add Expense</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="expensesList">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading expenses...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addExpenseModal">Add Expense</button>
+                        <% if (user.ispremimumuser) { %>
+                            <button class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addIncomeModal">Add Income</button>
+                        <% } else { %>
+                            <button class="btn btn-success w-100 mb-2" onclick="showPremiumAlert()">Add Income (Premium)</button>
+                        <% } %>
+                        <button class="btn btn-info w-100 mb-2" onclick="viewReports()">View Reports</button>
+                        <% if (!user.ispremimumuser) { %>
+                            <button class="btn btn-warning w-100 mb-2" onclick="upgradeToPremium()">Upgrade to Premium</button>
+                        <% } %>
+                        <button class="btn btn-secondary w-100" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal fade" id="addExpenseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Expense</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addExpenseForm">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="description" name="description" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-control" id="category" name="category_id" required>
+                                <option value="">Select Category</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="note" class="form-label">Note (Optional)</label>
+                            <textarea class="form-control" id="note" name="note" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Income Modal (Premium Only) -->
+    <div class="modal fade" id="addIncomeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Income</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addIncomeForm">
+                        <div class="mb-3">
+                            <label for="income_amount" class="form-label">Income Amount</label>
+                            <input type="number" class="form-control" id="income_amount" name="income_amount" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="income_description" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="income_description" name="income_description" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="income_source" class="form-label">Source</label>
+                            <input type="text" class="form-control" id="income_source" name="income_source" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="income_note" class="form-label">Note (Optional)</label>
+                            <textarea class="form-control" id="income_note" name="note" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="addIncome()">Add Income</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upgrade to Premium</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <h4>Premium Features</h4>
+                        <ul class="list-unstyled">
+                            <li>✅ Income Tracking</li>
+                            <li>✅ Advanced Reports</li>
+                            <li>✅ Leaderboard Access</li>
+                            <li>✅ Priority Support</li>
+                        </ul>
+                        <h5 class="text-warning">₹299/month</h5>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="initiatePayment()">Pay Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let authToken = '<%= user.token || "" %>';
+        let userId = <%= user.id %>;
+        let isPremium = <%= user.ispremimumuser %>;
+
+        // Load expenses on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExpenses();
+            loadCategories();
+        });
+
+        // Load expenses from API
+        async function loadExpenses() {
+            try {
+                const response = await fetch('/expenses', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const expenses = await response.json();
+                    displayExpenses(expenses);
+                } else {
+                    document.getElementById('expensesList').innerHTML = '<p class="text-danger">Error loading expenses</p>';
+                }
+            } catch (error) {
+                console.error('Error loading expenses:', error);
+                document.getElementById('expensesList').innerHTML = '<p class="text-danger">Error loading expenses</p>';
+            }
+        }
+
+        // Display expenses in UI
+        function displayExpenses(expenses) {
+            const expensesList = document.getElementById('expensesList');
+            
+            if (expenses.length === 0) {
+                expensesList.innerHTML = '<p class="text-muted">No transactions yet. Start by adding an expense!</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Actions</th></tr></thead><tbody>';
+            
+            expenses.forEach(expense => {
+                const date = new Date(expense.created_at).toLocaleDateString();
+                const categoryName = expense.Category ? expense.Category.name : 'Unknown';
+                const amount = parseFloat(expense.amount);
+                const incomeAmount = parseFloat(expense.income_amount || 0);
+                
+                html += `<tr>
+                    <td>${date}</td>
+                    <td>${expense.description}</td>
+                    <td>${categoryName}</td>
+                    <td>
+                        ${amount > 0 ? `<span class="text-danger">-₹${amount}</span>` : ''}
+                        ${incomeAmount > 0 ? `<span class="text-success">+₹${incomeAmount}</span>` : ''}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${expense.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            expensesList.innerHTML = html;
+        }
+
+        // Load categories for dropdown
+        async function loadCategories() {
+            try {
+                const response = await fetch('/categories', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const categories = await response.json();
+                    const categorySelect = document.getElementById('category');
+                    
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        categorySelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Add expense
+        async function addExpense() {
+            const form = document.getElementById('addExpenseForm');
+            const formData = new FormData(form);
+            
+            const expenseData = {
+                amount: formData.get('amount'),
+                description: formData.get('description'),
+                category_id: formData.get('category_id'),
+                note: formData.get('note')
+            };
+
+            try {
+                const response = await fetch('/expenses', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(expenseData)
+                });
+
+                if (response.ok) {
+                    // Close modal and reload expenses
+                    bootstrap.Modal.getInstance(document.getElementById('addExpenseModal')).hide();
+                    form.reset();
+                    loadExpenses();
+                    location.reload(); // Reload to update total expense
+                } else {
+                    alert('Error adding expense');
+                }
+            } catch (error) {
+                console.error('Error adding expense:', error);
+                alert('Error adding expense');
+            }
+        }
+
+        // Add income (Premium only)
+        async function addIncome() {
+            if (!isPremium) {
+                showPremiumAlert();
+                return;
+            }
+
+            const form = document.getElementById('addIncomeForm');
+            const formData = new FormData(form);
+            
+            const incomeData = {
+                income_amount: formData.get('income_amount'),
+                income_description: formData.get('income_description'),
+                income_source: formData.get('income_source'),
+                note: formData.get('note')
+            };
+
+            try {
+                const response = await fetch('/expenses', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(incomeData)
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addIncomeModal')).hide();
+                    form.reset();
+                    loadExpenses();
+                } else {
+                    alert('Error adding income');
+                }
+            } catch (error) {
+                console.error('Error adding income:', error);
+                alert('Error adding income');
+            }
+        }
+
+        // Delete expense
+        async function deleteExpense(expenseId) {
+            if (!confirm('Are you sure you want to delete this expense?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/expenses/${expenseId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    loadExpenses();
+                    location.reload(); // Reload to update total expense
+                } else {
+                    alert('Error deleting expense');
+                }
+            } catch (error) {
+                console.error('Error deleting expense:', error);
+                alert('Error deleting expense');
+            }
+        }
+
+        // Show premium alert
+        function showPremiumAlert() {
+            alert('This feature is available for premium users only. Please upgrade to premium to access income tracking.');
+        }
+
+        // Upgrade to premium
+        function upgradeToPremium() {
+            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            modal.show();
+        }
+
+        // Initiate payment
+        async function initiatePayment() {
+            const paymentData = {
+                amount: 299,
+                customerId: userId,
+                customerPhone: '9999999999', // You can get this from user profile
+                customerEmail: '<%= user.email %>',
+                returnUrl: window.location.origin + '/payment-success'
+            };
+
+            try {
+                const response = await fetch('/payment/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // Redirect to payment gateway
+                        window.location.href = `https://sandbox.cashfree.com/pg/web/pay/${result.data.paymentSessionId}`;
+                    } else {
+                        alert('Error creating payment order');
+                    }
+                } else {
+                    alert('Error creating payment order');
+                }
+            } catch (error) {
+                console.error('Error initiating payment:', error);
+                alert('Error initiating payment');
+            }
+        }
+
+        // View reports
+        function viewReports() {
+            if (!isPremium) {
+                showPremiumAlert();
+                return;
+            }
+            alert('Reports feature coming soon!');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -9,16 +9,34 @@ const dbPort = Number(process.env.DB_PORT) || 5432;
 const dbDialect = process.env.DB_DIALECT || 'postgres';
 const dbLogging = (process.env.DB_LOGGING || 'false').toLowerCase() === 'true';
 
+// SSL flag from env, default true for RDS
+const useSSL = (process.env.DB_SSL || 'true').toLowerCase() === 'true';
+
 let sequelize;
 
 if (process.env.DATABASE_URL) {
   // Heroku-style single DATABASE_URL with SSL
-  const sslRequired = (process.env.DB_SSL || 'true').toLowerCase() === 'true';
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     protocol: 'postgres',
     logging: dbLogging,
-    dialectOptions: sslRequired
+    dialectOptions: useSSL
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false, // RDS ke liye temporary safe
+          },
+        }
+      : {},
+  });
+} else {
+  // Local or RDS connection
+  sequelize = new Sequelize(dbName, dbUser, dbPassword, {
+    host: dbHost,
+    dialect: dbDialect,
+    port: dbPort,
+    logging: dbLogging,
+    dialectOptions: useSSL
       ? {
           ssl: {
             require: true,
@@ -26,13 +44,6 @@ if (process.env.DATABASE_URL) {
           },
         }
       : {},
-  });
-} else {
-  sequelize = new Sequelize(dbName, dbUser, dbPassword, {
-    host: dbHost,
-    dialect: dbDialect,
-    port: dbPort,
-    logging: dbLogging,
   });
 }
 

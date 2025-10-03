@@ -45,6 +45,11 @@ app.get("/", (req, res) => {
   res.render('loginView', { title: 'Expense Tracker - Login' });
 });
 
+// Test route to verify server is working
+app.get("/test", (req, res) => {
+  res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
+});
+
 // View routes (for rendering EJS templates)
 app.get("/login", (req, res) => {
   res.render('loginView', { title: 'Login' });
@@ -52,6 +57,91 @@ app.get("/login", (req, res) => {
 
 app.get("/signup", (req, res) => {
   res.render('signupView', { title: 'Sign Up' });
+});
+
+// Add GET route for /users/signup to match the link in loginView
+app.get("/users/signup", (req, res) => {
+  res.render('signupView', { title: 'Sign Up' });
+});
+
+app.get("/users/login", (req, res) => {
+  res.render('loginView', { title: 'Login' });
+});
+
+// Payment view route
+app.get("/payment", (req, res) => {
+  console.log('Payment route accessed');
+  console.log('Session data:', req.session);
+  
+  // Check if user is logged in via session
+  if (!req.session.userId) {
+    console.log('User not logged in, redirecting to login');
+    return res.redirect('/login');
+  }
+  
+  // Check if we have real Cashfree credentials
+  const hasRealCredentials = process.env.CASHFREE_CLIENT_ID && 
+                           process.env.CASHFREE_CLIENT_ID !== 'YOUR_ACTUAL_CLIENT_ID' &&
+                           process.env.CASHFREE_CLIENT_SECRET && 
+                           process.env.CASHFREE_CLIENT_SECRET !== 'YOUR_ACTUAL_CLIENT_SECRET';
+  
+  if (!hasRealCredentials) {
+    console.log('🔧 No real credentials found, showing mock payment view');
+    return res.render('mockPaymentView');
+  }
+  
+  // Get user data from session or database
+  const user = {
+    id: req.session.userId,
+    name: req.session.userName,
+    email: req.session.userEmail,
+    ispremimumuser: req.session.isPremiumUser,
+    token: req.session.token
+  };
+  
+  console.log('Rendering payment view for user:', user);
+  
+  res.render('paymentView', { 
+    title: 'Upgrade to Premium',
+    user: user
+  });
+});
+
+// Payment success route
+app.get("/payment-success", (req, res) => {
+  res.render('paymentSuccessView', { 
+    title: 'Payment Successful',
+    user: {
+      id: req.session.userId,
+      name: req.session.userName,
+      email: req.session.userEmail,
+      ispremimumuser: req.session.isPremiumUser,
+      token: req.session.token
+    }
+  });
+});
+
+// Dashboard route
+app.get("/dashboard", (req, res) => {
+  // Check if user is logged in via session
+  if (!req.session.userId) {
+    return res.redirect('/login');
+  }
+  
+  // Get user data from session
+  const user = {
+    id: req.session.userId,
+    name: req.session.userName,
+    email: req.session.userEmail,
+    ispremimumuser: req.session.isPremiumUser,
+    token: req.session.token,
+    totalexpense: 0 // This should be fetched from database
+  };
+  
+  res.render('userView', { 
+    title: 'Dashboard',
+    user: user
+  });
 });
 
 app.get("/logout", (req, res) => {
@@ -67,7 +157,7 @@ app.get("/logout", (req, res) => {
 app.use("/users", userRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/expenses", expenseRoutes);
-app.use("/payment", paymentRoutes);
+app.use("/payment-api", paymentRoutes); // Changed from /payment to /payment-api to avoid conflict
 app.use("/forgotpassword", forgotPasswordRoutes);
 app.use("/verify", verifyRoutes);
 

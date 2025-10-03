@@ -1,4 +1,4 @@
-const Signup = require('../model/signup'); // Sequelize model
+const Signup = require('../models/signup'); // Sequelize model
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 

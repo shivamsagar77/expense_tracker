@@ -3,8 +3,11 @@ const { Cashfree, CFEnvironment } = require("cashfree-pg");
 class PaymentService {
     constructor() {
         const cashfreeEnv = (process.env.CASHFREE_ENV || 'SANDBOX').toUpperCase();
-        const clientId = process.env.CASHFREE_CLIENT_ID;
-        const clientSecret = process.env.CASHFREE_CLIENT_SECRET;
+        // For testing - replace with your actual credentials from Cashfree dashboard
+        const clientId = process.env.CASHFREE_CLIENT_ID || 'YOUR_ACTUAL_CLIENT_ID';
+        const clientSecret = process.env.CASHFREE_CLIENT_SECRET || 'YOUR_ACTUAL_CLIENT_SECRET';
+
+        console.log('Cashfree Config:', { cashfreeEnv, clientId: clientId ? 'SET' : 'NOT_SET', clientSecret: clientSecret ? 'SET' : 'NOT_SET' });
 
         const environment = cashfreeEnv === 'PRODUCTION' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
 

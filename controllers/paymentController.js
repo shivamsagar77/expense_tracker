@@ -1,4 +1,5 @@
 const paymentService = require('../service/paymentService');
+const mockPaymentService = require('../service/mockPaymentService');
 const paymentStorageService = require('../service/paymentStorageService');
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
@@ -31,7 +32,20 @@ class PaymentController {
                 returnUrl: returnUrl
             };
 
-            const result = await paymentService.createOrder(orderData);
+            // Check if we have real Cashfree credentials
+            const hasRealCredentials = process.env.CASHFREE_CLIENT_ID && 
+                                     process.env.CASHFREE_CLIENT_ID !== 'YOUR_ACTUAL_CLIENT_ID' &&
+                                     process.env.CASHFREE_CLIENT_SECRET && 
+                                     process.env.CASHFREE_CLIENT_SECRET !== 'YOUR_ACTUAL_CLIENT_SECRET';
+
+            let result;
+            if (hasRealCredentials) {
+                console.log('✅ Using real Cashfree service');
+                result = await paymentService.createOrder(orderData);
+            } else {
+                console.log('🔧 Using mock payment service for testing');
+                result = await mockPaymentService.createOrder(orderData);
+            }
 
             if (result.success) {
                 res.status(200).json({
@@ -73,7 +87,18 @@ class PaymentController {
                 });
             }
 
-            const result = await paymentService.getPaymentStatus(orderId);
+            // Check if we have real Cashfree credentials
+            const hasRealCredentials = process.env.CASHFREE_CLIENT_ID && 
+                                     process.env.CASHFREE_CLIENT_ID !== 'YOUR_ACTUAL_CLIENT_ID' &&
+                                     process.env.CASHFREE_CLIENT_SECRET && 
+                                     process.env.CASHFREE_CLIENT_SECRET !== 'YOUR_ACTUAL_CLIENT_SECRET';
+
+            let result;
+            if (hasRealCredentials) {
+                result = await paymentService.getPaymentStatus(orderId);
+            } else {
+                result = await mockPaymentService.getPaymentStatus(orderId);
+            }
 
             if (result.success) {
                 let premiumUpdated = false;

@@ -3,106 +3,418 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - Expense Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Dashboard - Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .dashboard-card {
-            transition: transform 0.2s;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --border-radius: 15px;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--primary-gradient) !important;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .dashboard-card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            background: white;
+        }
+
         .dashboard-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
+
+        .summary-card {
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .summary-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            transform: translate(-20px, 20px);
+        }
+
         .expense-summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary-gradient);
         }
+
         .income-summary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: var(--success-gradient);
+        }
+
+        .balance-summary {
+            background: var(--secondary-gradient);
+        }
+
+        .summary-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .summary-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .transaction-item {
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .transaction-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .transaction-expense {
+            border-left-color: #dc3545;
+        }
+
+        .transaction-income {
+            border-left-color: #28a745;
+        }
+
+        .btn-action {
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+        }
+
+        .btn-warning {
+            background: var(--warning-gradient);
+            color: #333;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            background: var(--primary-gradient);
             color: white;
+            border: none;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-actions {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .action-btn {
+            width: 100%;
+            margin-bottom: 0.75rem;
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .premium-badge {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .free-badge {
+            background: #6c757d;
+            color: white;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-amount {
+                font-size: 1.5rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">Expense Tracker</a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">Welcome, <%= user.name %>!</span>
-                <a class="btn btn-outline-light btn-sm" href="/logout">Logout</a>
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-wallet me-2"></i>Expense Tracker
+            </a>
+            <div class="navbar-nav ms-auto d-flex align-items-center">
+                <div class="me-3">
+                    <span class="navbar-text me-2">
+                        <i class="fas fa-user-circle me-1"></i>Welcome, <%= user.name %>!
+                    </span>
+                    <% if (user.ispremimumuser) { %>
+                        <span class="premium-badge">
+                            <i class="fas fa-crown me-1"></i>Premium
+                        </span>
+                    <% } else { %>
+                        <span class="free-badge">Free</span>
+                    <% } %>
+                </div>
+                <a class="btn btn-outline-light btn-sm" href="/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
             </div>
         </div>
     </nav>
 
     <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card dashboard-card expense-summary">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Total Expenses</h5>
-                        <h2 class="card-text">₹<%= user.totalexpense || 0 %></h2>
-                    </div>
+        <!-- Stats Grid -->
+        <div class="stats-grid fade-in">
+            <div class="card dashboard-card summary-card expense-summary">
+                <div class="card-body text-center position-relative">
+                    <i class="fas fa-credit-card summary-icon"></i>
+                    <div class="summary-amount">₹<%= user.totalexpense || 0 %></div>
+                    <div class="summary-label">Total Expenses</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card dashboard-card income-summary">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">This Month</h5>
-                        <h2 class="card-text">₹0</h2>
-                    </div>
+            <div class="card dashboard-card summary-card income-summary">
+                <div class="card-body text-center position-relative">
+                    <i class="fas fa-arrow-up summary-icon"></i>
+                    <div class="summary-amount" id="monthlyIncome">₹0</div>
+                    <div class="summary-label">This Month Income</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card dashboard-card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Account Type</h5>
-                        <h4 class="card-text">
-                            <% if (user.ispremimumuser) { %>
-                                <span class="badge bg-warning">Premium</span>
-                            <% } else { %>
-                                <span class="badge bg-secondary">Free</span>
-                            <% } %>
-                        </h4>
-                    </div>
+            <div class="card dashboard-card summary-card balance-summary">
+                <div class="card-body text-center position-relative">
+                    <i class="fas fa-wallet summary-icon"></i>
+                    <div class="summary-amount" id="balance">₹0</div>
+                    <div class="summary-label">Current Balance</div>
                 </div>
             </div>
         </div>
 
         <div class="row mt-4">
-            <div class="col-md-8">
-                <div class="card">
+            <div class="col-lg-8">
+                <!-- Chart Section -->
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>Expense Analytics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="card dashboard-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5>Recent Transactions</h5>
-                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">Add Expense</button>
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Transactions
+                        </h5>
+                        <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                            <i class="fas fa-plus me-1"></i>Add Expense
+                        </button>
                     </div>
                     <div class="card-body">
                         <div id="expensesList">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
+                            <div class="loading-spinner">
+                                <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
-                                <p class="mt-2">Loading expenses...</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card">
+            
+            <div class="col-lg-4">
+                <!-- Quick Actions -->
+                <div class="quick-actions mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                    <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                        <i class="fas fa-plus me-2"></i>Add Expense
+                    </button>
+                    <% if (user.ispremimumuser) { %>
+                        <button class="btn btn-success action-btn" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+                            <i class="fas fa-arrow-up me-2"></i>Add Income
+                        </button>
+                    <% } else { %>
+                        <button class="btn btn-success action-btn" onclick="showPremiumAlert()">
+                            <i class="fas fa-arrow-up me-2"></i>Add Income (Premium)
+                        </button>
+                    <% } %>
+                    <button class="btn btn-info action-btn" onclick="viewReports()">
+                        <i class="fas fa-chart-bar me-2"></i>View Reports
+                    </button>
+                    <% if (!user.ispremimumuser) { %>
+                        <button class="btn btn-warning action-btn pulse-animation" onclick="upgradeToPremium()">
+                            <i class="fas fa-crown me-2"></i>Upgrade to Premium
+                        </button>
+                    <% } %>
+                </div>
+
+                <!-- Monthly Summary -->
+                <div class="card dashboard-card">
                     <div class="card-header">
-                        <h5>Quick Actions</h5>
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>This Month
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addExpenseModal">Add Expense</button>
-                        <% if (user.ispremimumuser) { %>
-                            <button class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addIncomeModal">Add Income</button>
-                        <% } else { %>
-                            <button class="btn btn-success w-100 mb-2" onclick="showPremiumAlert()">Add Income (Premium)</button>
-                        <% } %>
-                        <button class="btn btn-info w-100 mb-2" onclick="viewReports()">View Reports</button>
-                        <% if (!user.ispremimumuser) { %>
-                            <button class="btn btn-warning w-100 mb-2" onclick="upgradeToPremium()">Upgrade to Premium</button>
-                        <% } %>
-                        <button class="btn btn-secondary w-100" onclick="logout()">Logout</button>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Income:</span>
+                            <span class="text-success fw-bold" id="monthlyIncomeSummary">₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Expenses:</span>
+                            <span class="text-danger fw-bold" id="monthlyExpenseSummary">₹0</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">Balance:</span>
+                            <span class="fw-bold" id="monthlyBalanceSummary">₹0</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -220,13 +532,26 @@
 
         // Load expenses on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Set initial total expense from server data
+            const initialTotalExpense = <%= user.totalexpense || 0 %>;
+            const totalExpenseElement = document.querySelector('.expense-summary .summary-amount');
+            if (totalExpenseElement) {
+                totalExpenseElement.textContent = `₹${initialTotalExpense}`;
+            }
+            
             loadExpenses();
             loadCategories();
+            
+            // Also refresh totals after a short delay to ensure data is loaded
+            setTimeout(() => {
+                loadExpenses();
+            }, 1000);
         });
 
         // Load expenses from API
         async function loadExpenses() {
             try {
+                // console.log('Loading expenses with token:', authToken ? 'Present' : 'Missing');
                 const response = await fetch('/expenses', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -234,15 +559,20 @@
                     }
                 });
 
+                // console.log('Response status:', response.status);
+                
                 if (response.ok) {
                     const expenses = await response.json();
+                    // console.log('Received expenses:', expenses);
                     displayExpenses(expenses);
                 } else {
-                    document.getElementById('expensesList').innerHTML = '<p class="text-danger">Error loading expenses</p>';
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    document.getElementById('expensesList').innerHTML = '<p class="text-danger">Error loading expenses: ' + response.status + '</p>';
                 }
             } catch (error) {
                 console.error('Error loading expenses:', error);
-                document.getElementById('expensesList').innerHTML = '<p class="text-danger">Error loading expenses</p>';
+                document.getElementById('expensesList').innerHTML = '<p class="text-danger">Error loading expenses: ' + error.message + '</p>';
             }
         }
 
@@ -251,34 +581,118 @@
             const expensesList = document.getElementById('expensesList');
             
             if (expenses.length === 0) {
-                expensesList.innerHTML = '<p class="text-muted">No transactions yet. Start by adding an expense!</p>';
+                expensesList.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No transactions yet. Start by adding an expense!</p>
+                    </div>
+                `;
                 return;
             }
 
-            let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Actions</th></tr></thead><tbody>';
+            let html = '';
+            let totalIncome = 0;
+            let totalExpense = 0;
+            let monthlyIncome = 0;
+            let monthlyExpense = 0;
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
             
             expenses.forEach(expense => {
-                const date = new Date(expense.created_at).toLocaleDateString();
+                const date = new Date(expense.created_at);
                 const categoryName = expense.Category ? expense.Category.name : 'Unknown';
-                const amount = parseFloat(expense.amount);
+                const amount = parseFloat(expense.amount || 0);
                 const incomeAmount = parseFloat(expense.income_amount || 0);
                 
-                html += `<tr>
-                    <td>${date}</td>
-                    <td>${expense.description}</td>
-                    <td>${categoryName}</td>
-                    <td>
-                        ${amount > 0 ? `<span class="text-danger">-₹${amount}</span>` : ''}
-                        ${incomeAmount > 0 ? `<span class="text-success">+₹${incomeAmount}</span>` : ''}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${expense.id})">Delete</button>
-                    </td>
-                </tr>`;
+                // Debug logging (remove in production)
+                // console.log('Expense data:', {
+                //     description: expense.description,
+                //     amount: amount,
+                //     income_amount: incomeAmount,
+                //     date: date.toLocaleDateString(),
+                //     raw_amount: expense.amount,
+                //     raw_income_amount: expense.income_amount
+                // });
+                
+                // Calculate totals - ensure we're adding valid numbers
+                if (!isNaN(amount)) {
+                    totalExpense += amount;
+                }
+                if (!isNaN(incomeAmount)) {
+                    totalIncome += incomeAmount;
+                }
+                
+                // Calculate monthly totals
+                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                    if (!isNaN(amount)) {
+                        monthlyExpense += amount;
+                    }
+                    if (!isNaN(incomeAmount)) {
+                        monthlyIncome += incomeAmount;
+                    }
+                }
+                
+                const isExpense = amount > 0;
+                const transactionClass = isExpense ? 'transaction-expense' : 'transaction-income';
+                const amountClass = isExpense ? 'text-danger' : 'text-success';
+                const amountPrefix = isExpense ? '-' : '+';
+                const displayAmount = isExpense ? amount : incomeAmount;
+                const icon = isExpense ? 'fa-arrow-down' : 'fa-arrow-up';
+                
+                html += `
+                    <div class="transaction-item ${transactionClass} p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas ${icon} fa-lg ${amountClass}"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">${expense.description}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-tag me-1"></i>${categoryName} • 
+                                        <i class="fas fa-calendar me-1"></i>${date.toLocaleDateString()}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold ${amountClass}">${amountPrefix}₹${displayAmount}</div>
+                                <button class="btn btn-sm btn-outline-danger mt-1" onclick="deleteExpense(${expense.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
             
-            html += '</tbody></table></div>';
             expensesList.innerHTML = html;
+            
+            // Debug logging for totals
+            // console.log('Calculated totals:', {
+            //     totalExpense: totalExpense,
+            //     totalIncome: totalIncome,
+            //     monthlyExpense: monthlyExpense,
+            //     monthlyIncome: monthlyIncome
+            // });
+            
+            // Update summary cards
+            document.getElementById('monthlyIncome').textContent = `₹${monthlyIncome}`;
+            document.getElementById('balance').textContent = `₹${totalIncome - totalExpense}`;
+            document.getElementById('monthlyIncomeSummary').textContent = `₹${monthlyIncome}`;
+            document.getElementById('monthlyExpenseSummary').textContent = `₹${monthlyExpense}`;
+            document.getElementById('monthlyBalanceSummary').textContent = `₹${monthlyIncome - monthlyExpense}`;
+            
+            // Update the main total expense display (this was missing!)
+            const totalExpenseElement = document.querySelector('.expense-summary .summary-amount');
+            if (totalExpenseElement) {
+                totalExpenseElement.textContent = `₹${totalExpense}`;
+                // console.log('Updated total expense display to:', totalExpense);
+            } else {
+                // console.log('Total expense element not found!');
+            }
+            
+            // Update chart
+            updateChart(expenses);
         }
 
         // Load categories for dropdown
@@ -413,13 +827,15 @@
 
         // Show premium alert
         function showPremiumAlert() {
-            alert('This feature is available for premium users only. Please upgrade to premium to access income tracking.');
+            if (confirm('This feature is available for premium users only. Would you like to upgrade to premium now?')) {
+                window.location.href = '/payment';
+            }
         }
 
         // Upgrade to premium
         function upgradeToPremium() {
-            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
-            modal.show();
+            // Redirect to payment page instead of showing modal
+            window.location.href = '/payment';
         }
 
         // Initiate payment
@@ -433,7 +849,7 @@
             };
 
             try {
-                const response = await fetch('/payment/create-order', {
+                const response = await fetch('/payment-api/create-order', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -474,6 +890,141 @@
                 window.location.href = '/logout';
             }
         }
+
+        // Chart functionality
+        let expenseChart = null;
+
+        function updateChart(expenses) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            
+            // Calculate category totals
+            const categoryTotals = {};
+            expenses.forEach(expense => {
+                if (expense.amount > 0) { // Only count expenses, not income
+                    const categoryName = expense.Category ? expense.Category.name : 'Unknown';
+                    categoryTotals[categoryName] = (categoryTotals[categoryName] || 0) + parseFloat(expense.amount);
+                }
+            });
+
+            const labels = Object.keys(categoryTotals);
+            const data = Object.values(categoryTotals);
+            const colors = [
+                '#667eea', '#764ba2', '#f093fb', '#f5576c', 
+                '#4facfe', '#00f2fe', '#ffecd2', '#fcb69f',
+                '#a8edea', '#fed6e3', '#d299c2', '#fef9d7'
+            ];
+
+            if (expenseChart) {
+                expenseChart.destroy();
+            }
+
+            if (labels.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText('No expense data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+
+            expenseChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ₹${context.parsed} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        // Add smooth animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.dashboard-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Add loading states to buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!this.disabled) {
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            this.style.transform = 'scale(1)';
+                        }, 150);
+                    }
+                });
+            });
+        });
+
+        // Enhanced form validation
+        function validateForm(formId) {
+            const form = document.getElementById(formId);
+            const inputs = form.querySelectorAll('input[required], select[required]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+
+            return isValid;
+        }
+
+        // Add form validation to expense form
+        document.getElementById('addExpenseForm').addEventListener('submit', function(e) {
+            if (!validateForm('addExpenseForm')) {
+                e.preventDefault();
+                alert('Please fill in all required fields');
+            }
+        });
+
+        // Add form validation to income form
+        document.getElementById('addIncomeForm').addEventListener('submit', function(e) {
+            if (!validateForm('addIncomeForm')) {
+                e.preventDefault();
+                alert('Please fill in all required fields');
+            }
+        });
     </script>
 </body>
 </html>
+

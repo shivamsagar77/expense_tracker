@@ -14,13 +14,19 @@ const userController = {
 
       // Basic validation
       if (!name || !phone || !email || !password) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.render('signupView', { 
+          title: 'Sign Up',
+          error: "All fields are required" 
+        });
       }
 
       // Check if user already exists (case insensitive)
       const existingUser = await Signup.findOne({ where: { email: email.toLowerCase() } });
       if (existingUser) {
-        return res.status(409).json({ message: "User already exists with this email" });
+        return res.render('signupView', { 
+          title: 'Sign Up',
+          error: "User already exists with this email" 
+        });
       }
 
       // Hash password
@@ -47,14 +53,30 @@ const userController = {
         { expiresIn: '24h' }
       );
 
-      return res.status(201).json({
-        message: "User signed up successfully",
-        user: newUser,
-        token: token
+      // Store user data in session
+      req.session.userId = newUser.id;
+      req.session.userName = newUser.name;
+      req.session.userEmail = newUser.email;
+      req.session.isPremiumUser = newUser.ispremimumuser;
+      req.session.token = token;
+
+      // Render user dashboard
+      return res.render('userView', { 
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          totalexpense: newUser.totalexpense,
+          ispremimumuser: newUser.ispremimumuser,
+          token: token
+        }
       });
     } catch (error) {
       console.error("Error in signup:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+      return res.render('signupView', { 
+        title: 'Sign Up',
+        error: "Internal Server Error. Please try again." 
+      });
     }
   },
 
@@ -63,7 +85,10 @@ const userController = {
     const { email, password } = req.body;
     
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required.' });
+      return res.render('loginView', { 
+        title: 'Login',
+        error: 'Email and password are required.' 
+      });
     }
     
     try {
@@ -78,13 +103,19 @@ const userController = {
       console.log('User found:', user ? 'Yes' : 'No');
       
       if (!user) {
-        return res.status(401).json({ message: 'Invalid email or password.' });
+        return res.render('loginView', { 
+          title: 'Login',
+          error: 'Invalid email or password.' 
+        });
       }
       
       const isMatch = await bcrypt.compare(password, user.password);
       
       if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid email or password.' });
+        return res.render('loginView', { 
+          title: 'Login',
+          error: 'Invalid email or password.' 
+        });
       }
 
       // Generate JWT token
@@ -119,7 +150,10 @@ const userController = {
       });
     } catch (err) {
       console.error('Login error:', err);
-      return res.status(500).json({ message: 'Server error', error: err.message });
+      return res.render('loginView', { 
+        title: 'Login',
+        error: 'Server error. Please try again.' 
+      });
     }
   },
 

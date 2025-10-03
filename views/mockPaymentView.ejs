@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Payment Test - Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .mock-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .mock-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .mock-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            background: var(--warning-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mock-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mock-description {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .mock-steps {
+            text-align: left;
+            margin: 30px 0;
+        }
+
+        .mock-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .mock-step-icon {
+            font-size: 1.5rem;
+            margin-right: 15px;
+            color: #667eea;
+        }
+
+        .mock-step-text {
+            flex: 1;
+        }
+
+        .mock-step-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .mock-step-desc {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .mock-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-mock {
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-test {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+            color: white;
+        }
+
+        .btn-setup {
+            background: var(--warning-gradient);
+            color: white;
+        }
+
+        .btn-setup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+            color: white;
+        }
+
+        .mock-alert {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .mock-alert-icon {
+            color: #ffc107;
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mock-container">
+        <div class="mock-card">
+            <div class="mock-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            
+            <h1 class="mock-title">Mock Payment System</h1>
+            
+            <p class="mock-description">
+                You're currently using the mock payment system because real Cashfree credentials are not configured.
+            </p>
+
+            <div class="mock-alert">
+                <i class="fas fa-exclamation-triangle mock-alert-icon"></i>
+                <strong>Current Status:</strong> Using placeholder credentials - payments will be simulated
+            </div>
+
+            <div class="mock-steps">
+                <h4 class="mb-3">To enable real payments:</h4>
+                
+                <div class="mock-step">
+                    <i class="fas fa-user-plus mock-step-icon"></i>
+                    <div class="mock-step-text">
+                        <div class="mock-step-title">1. Create Cashfree Account</div>
+                        <div class="mock-step-desc">Sign up at merchant.cashfree.com</div>
+                    </div>
+                </div>
+
+                <div class="mock-step">
+                    <i class="fas fa-key mock-step-icon"></i>
+                    <div class="mock-step-text">
+                        <div class="mock-step-title">2. Get API Credentials</div>
+                        <div class="mock-step-desc">Copy Client ID and Client Secret from dashboard</div>
+                    </div>
+                </div>
+
+                <div class="mock-step">
+                    <i class="fas fa-file-code mock-step-icon"></i>
+                    <div class="mock-step-text">
+                        <div class="mock-step-title">3. Create .env File</div>
+                        <div class="mock-step-desc">Add your credentials to .env file in project root</div>
+                    </div>
+                </div>
+
+                <div class="mock-step">
+                    <i class="fas fa-redo mock-step-icon"></i>
+                    <div class="mock-step-text">
+                        <div class="mock-step-title">4. Restart Server</div>
+                        <div class="mock-step-desc">Restart your Node.js server to load new credentials</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mock-buttons">
+                <button onclick="testMockPayment()" class="btn btn-mock btn-test">
+                    <i class="fas fa-play me-2"></i>Test Mock Payment
+                </button>
+                <a href="/dashboard" class="btn btn-mock btn-setup">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <div class="mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Mock payments simulate successful transactions for testing purposes
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function testMockPayment() {
+            try {
+                // Show loading state
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+                button.disabled = true;
+
+                // Create mock payment order
+                const response = await fetch('/payment-api/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: 299,
+                        customerId: 8, // Mock user ID
+                        customerPhone: '9876543210',
+                        customerEmail: 'test@example.com',
+                        returnUrl: 'http://localhost:5000/payment-success'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Simulate successful payment
+                    alert('🎉 Mock Payment Successful!\n\nOrder ID: ' + result.data.orderId + '\nAmount: ₹299\n\nRedirecting to success page...');
+                    
+                    // Redirect to success page
+                    setTimeout(() => {
+                        window.location.href = '/payment-success';
+                    }, 2000);
+                } else {
+                    alert('❌ Mock Payment Failed: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Mock payment error:', error);
+                alert('❌ Mock Payment Error: ' + error.message);
+            } finally {
+                // Reset button state
+                const button = event.target;
+                button.innerHTML = '<i class="fas fa-play me-2"></i>Test Mock Payment';
+                button.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

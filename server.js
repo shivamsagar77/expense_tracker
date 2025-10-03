@@ -1,7 +1,7 @@
 const app = require('./app');
 const { sequelize } = require('./config/db');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 22;
 
 // Test database connection
 const testConnection = async () => {
